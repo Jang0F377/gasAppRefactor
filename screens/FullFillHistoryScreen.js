@@ -1,5 +1,5 @@
 import tw from 'twrnc';
-import {FlatList, SafeAreaView, View} from "react-native";
+import {FlatList, SafeAreaView, TouchableOpacity, View} from "react-native";
 import {Text} from "@rneui/themed";
 import {collection, query, orderBy, onSnapshot, doc, getDocs} from 'firebase/firestore';
 import {db} from "../firebase";
@@ -10,16 +10,26 @@ const FullFillHistoryScreen = () => {
 
     const fetchHistory = async () => {
         const ref = collection(db,'finalFills');
-        const docSnap = await getDocs(ref)
+        const docSnap = await getDocs(ref);
+        const arr = [];
         docSnap.forEach((doc) => {
-            console.log(doc.id, '=>', doc.data())
-        })
+            let thisData = doc.data();
+            arr.push({
+                endingMileage:thisData.endingMileage,
+                gasBrand:thisData.gasBrand,
+                m2EEnd:thisData.m2EEnd,
+                m2EStart:thisData.m2EStart,
+                secondTimeGasBrand: thisData.secondTimeGasBrand,
+                startingMileage:thisData.startingMileage,
+            })
+        });
+        setData(arr);
     }
 
     useEffect(() => {
         fetchHistory().then()
 
-        return () => {}
+        return () => {};
     },[])
 
 
@@ -27,7 +37,7 @@ const FullFillHistoryScreen = () => {
     return (
         <SafeAreaView style={tw`h-full`}>
             <FullFillHistoryTitle/>
-            {/*<RenderHistoryList data={data}/>*/}
+            <RenderHistoryList data={data}/>
         </SafeAreaView>
     );
 };
@@ -40,7 +50,49 @@ const RenderHistoryList = (props) => {
 
 
     return(
-        <FlatList data={props.data} renderItem={props.data.id}/>
+        <FlatList data={props.data} renderItem={({item}) => (
+            <TouchableOpacity
+                // onPress={() => props.navigation.navigate('Specific Fill Screen', {item:item})}
+                style={tw`flex-row items-center p-1 border-b m-1 mt-0 `}>
+                <View style={tw`flex-1 flex-row`}>
+                    <View style={tw`flex-2 `}>
+                        <Text style={tw`text-center mt-1 text-base`}>Initial fill at:</Text>
+                        <View style={tw`my-auto`}>
+                            <Text style={tw`text-center font-semibold`}>{item.gasBrand}</Text>
+                        </View>
+                    </View>
+                    <View style={tw`flex-2 flex-col border-l border-r`}>
+                        <View style={tw`flex-1 border-b p-1`}>
+                            <Text style={tw`text-center text-sm`}>Starting Mileage:</Text>
+                            <Text style={tw` text-center text-sm font-semibold`}>{item.startingMileage}</Text>
+                        </View>
+                        <View style={tw`flex-1 border-t p-1`}>
+                            <Text style={tw` text-center text-sm`}>Starting F-2-E Gauge:</Text>
+                            <Text style={tw` text-center text-sm font-semibold`}>{item.m2EStart}</Text>
+                        </View>
+                    </View>
+                </View>
+                <View style={tw`flex-1 flex-row`}>
+                    <View style={tw`flex-2 `}>
+                        <Text style={tw`text-center mt-1 text-base`}>Second fill:</Text>
+                        <View style={tw`my-auto`}>
+                            <Text style={tw`text-center font-semibold`}>{item.secondTimeGasBrand}</Text>
+                        </View>
+                    </View>
+                    <View style={tw`flex-2 flex-col border-l border-r`}>
+                        <View style={tw`flex-1 border-b p-1`}>
+                            <Text style={tw`text-center text-sm`}>Ending Mileage:</Text>
+                            <Text style={tw` text-center text-sm font-semibold`}>{item.endingMileage}</Text>
+                        </View>
+                        <View style={tw`flex-1 border-t p-1`}>
+                            <Text style={tw` text-center text-sm`}>Ending F-2-E Gauge:</Text>
+                            <Text style={tw` text-center text-sm font-semibold`}>{item.m2EEnd}</Text>
+                        </View>
+                    </View>
+
+                </View>
+            </TouchableOpacity>
+        )}/>
     )
 }
 

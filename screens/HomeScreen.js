@@ -2,11 +2,11 @@ import tw from 'twrnc';
 import {ActivityIndicator, Image, RefreshControl, SafeAreaView, ScrollView, TouchableOpacity, View} from "react-native";
 import {Icon, Text} from "@rneui/themed";
 import {useCallback, useEffect, useLayoutEffect, useState} from "react";
-import CustomListItem from "../components/CustomListItem";
 import {collection, getDocs, getDoc,doc} from "firebase/firestore";
-import {db} from "../firebase";
+import {auth, db} from "../firebase";
 import {useNavigation} from "@react-navigation/native";
 import RecentFillHistory from "../components/RecentFillHistory";
+import {signOut} from 'firebase/auth'
 
 
 const HomeScreen = ({navigation}) => {
@@ -39,9 +39,17 @@ const HomeScreen = ({navigation}) => {
         }
     };
 
+    const signOutFirebase = async () => {
+        await signOut(auth)
+            .then(() =>{
+                console.log('SIGN OUT SUCCESS');
+                navigation.replace('Login');
+            })
+            .catch(err => alert(err));
+    }
+
     useEffect(() => {
         fetchData().then()
-
         return () => {}
     },[])
 
@@ -69,11 +77,9 @@ const HomeScreen = ({navigation}) => {
 
     }
 
-
-
     return(
         <SafeAreaView style={tw`h-full`}>
-            <HeaderComponent inProgress={fillInProgress}/>
+            <HeaderComponent inProgress={fillInProgress} signOut={signOutFirebase}/>
             <ScrollView style={tw`flex-1`} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> }>
                 <View style={tw`flex-row justify-evenly m-5`}>
                     <FillHistory navigation={navigation}/>
@@ -106,6 +112,7 @@ const HeaderComponent = (props) => {
                 </View>
                 <View style={tw`flex flex-row`}>
                     <TouchableOpacity
+                        onPress={props.signOut}
                         style={tw`my-auto mx-auto`}
                     >
                         <Icon name='minus' type='font-awesome-5' size={40} style={tw`my-auto mx-auto mr-5 p-1`}/>

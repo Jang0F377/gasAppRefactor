@@ -9,6 +9,8 @@ import HomeScreen from "./screens/HomeScreen";
 import StartNewFillScreen from "./screens/StartNewFillScreen";
 import FullFillHistoryScreen from "./screens/FullFillHistoryScreen";
 import FinishFillScreen from "./screens/FinishFillScreen";
+import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
 
 export const wait = (timeout) => {
     return new Promise(resolve => setTimeout(resolve, timeout));
@@ -23,7 +25,9 @@ export default function App() {
       <Provider store={store}>
           <NavigationContainer>
               <SafeAreaProvider>
-                  <Stack.Navigator>
+                  <Stack.Navigator initialRouteName={'Login'}>
+                      <Stack.Screen name={'Login'} options={{headerShown:false}} component={LoginScreen}/>
+                      <Stack.Screen name={'Register'} options={{headerShown:false}} component={RegisterScreen}/>
                       <Stack.Screen name={'Home'} options={{headerShown:false}} component={HomeScreen}/>
                       <Stack.Screen name={'Start New Fill'} options={{headerShown:false}} component={StartNewFillScreen}/>
                       <Stack.Screen name={'History'} options={{headerShown:false}} component={FullFillHistoryScreen}/>
