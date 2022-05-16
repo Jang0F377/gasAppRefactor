@@ -1,20 +1,36 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import {createNativeStackNavigator} from "@react-navigation/native-stack";
+import {Provider} from 'react-redux'
+import {NavigationContainer} from "@react-navigation/native";
+import {SafeAreaProvider} from "react-native-safe-area-context";
+import {store} from "./store";
+import HomeScreen from "./screens/HomeScreen";
+import StartNewFillScreen from "./screens/StartNewFillScreen";
+import FullFillHistoryScreen from "./screens/FullFillHistoryScreen";
+import FinishFillScreen from "./screens/FinishFillScreen";
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+export const wait = (timeout) => {
+    return new Promise(resolve => setTimeout(resolve, timeout));
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+
+export default function App() {
+  const Stack = createNativeStackNavigator();
+
+
+  return (
+      <Provider store={store}>
+          <NavigationContainer>
+              <SafeAreaProvider>
+                  <Stack.Navigator>
+                      <Stack.Screen name={'Home'} options={{headerShown:false}} component={HomeScreen}/>
+                      <Stack.Screen name={'Start New Fill'} options={{headerShown:false}} component={StartNewFillScreen}/>
+                      <Stack.Screen name={'History'} options={{headerShown:false}} component={FullFillHistoryScreen}/>
+                      <Stack.Screen name={'Finish Fill'} options={{headerShown:false}} component={FinishFillScreen}/>
+                  </Stack.Navigator>
+              </SafeAreaProvider>
+          </NavigationContainer>
+      </Provider>
+  );
+}
