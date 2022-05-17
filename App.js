@@ -11,6 +11,7 @@ import FullFillHistoryScreen from "./screens/FullFillHistoryScreen";
 import FinishFillScreen from "./screens/FinishFillScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
+import UserAccountScreen from "./screens/UserAccountScreen";
 
 export const wait = (timeout) => {
     return new Promise(resolve => setTimeout(resolve, timeout));
@@ -32,6 +33,7 @@ export default function App() {
                       <Stack.Screen name={'Start New Fill'} options={{headerShown:false}} component={StartNewFillScreen}/>
                       <Stack.Screen name={'History'} options={{headerShown:false}} component={FullFillHistoryScreen}/>
                       <Stack.Screen name={'Finish Fill'} options={{headerShown:false}} component={FinishFillScreen}/>
+                      <Stack.Screen name={'User Account'} options={{headerShown:false}} component={UserAccountScreen}/>
                   </Stack.Navigator>
               </SafeAreaProvider>
           </NavigationContainer>

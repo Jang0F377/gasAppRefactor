@@ -1,46 +1,15 @@
 import tw from 'twrnc';
 import {FlatList, SafeAreaView, TouchableOpacity, View} from "react-native";
 import {Text} from "@rneui/themed";
-import {collection, query, orderBy, onSnapshot, doc, getDocs} from 'firebase/firestore';
-import {db} from "../firebase";
-import {useEffect, useState} from "react";
-import {useSelector} from "react-redux";
-import {selectUserEmail} from "../slices/userSlice";
-
-const FullFillHistoryScreen = () => {
-    const [data,setData] = useState([]);
-    const userEmail = useSelector(selectUserEmail);
-
-    const fetchHistory = async () => {
-        const ref = collection(db,'users',`${userEmail}`,'finalFills');
-        const docSnap = await getDocs(ref);
-        const arr = [];
-        docSnap.forEach((doc) => {
-            let thisData = doc.data();
-            arr.push({
-                endingMileage:thisData.endingMileage,
-                gasBrand:thisData.gasBrand,
-                m2EEnd:thisData.m2EEnd,
-                m2EStart:thisData.m2EStart,
-                secondTimeGasBrand: thisData.secondTimeGasBrand,
-                startingMileage:thisData.startingMileage,
-            })
-        });
-        setData(arr);
-    }
-
-    useEffect(() => {
-        fetchHistory().then()
-
-        return () => {};
-    },[])
 
 
+const FullFillHistoryScreen = ({route}) => {
+    const { item } = route.params;
 
     return (
         <SafeAreaView style={tw`h-full`}>
             <FullFillHistoryTitle/>
-            <RenderHistoryList data={data}/>
+            <RenderHistoryList data={item}/>
         </SafeAreaView>
     );
 };
@@ -123,5 +92,4 @@ const FullFillHistoryTitle = () => {
             </View>
         </View>
     );
-
-}
+};

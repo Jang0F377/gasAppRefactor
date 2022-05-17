@@ -7,15 +7,17 @@ import {auth, db} from "../firebase";
 import {useNavigation} from "@react-navigation/native";
 import RecentFillHistory from "../components/RecentFillHistory";
 import {signOut} from 'firebase/auth'
-import {useSelector} from "react-redux";
-import {selectUserEmail} from "../slices/userSlice";
+import {useDispatch, useSelector} from "react-redux";
+import {logout, selectUserEmail} from "../slices/userSlice";
 
 
 const HomeScreen = ({navigation}) => {
     const [fillInProgress,setFillInProgress] = useState(false);
     const [fillInProgressData,setFillInProgressData] = useState({});
+    const [fillHistoryData,setFillHistoryData] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
     const userEmail = useSelector(selectUserEmail)
+    const dispatch = useDispatch();
 
     const wait = (timeout) => {
         return new Promise(resolve => setTimeout(resolve, timeout));
@@ -30,6 +32,26 @@ const HomeScreen = ({navigation}) => {
             .then(() => setRefreshing(false));
     }, []);
 
+    const fetchHistory = async () => {
+        const ref = collection(db,'users',`${userEmail}`,'finalFills');
+        const docSnap = await getDocs(ref);
+        const arr = [];
+        docSnap.forEach((doc) => {
+            let thisData = doc.data();
+            arr.push({
+                endingMileage:thisData.endingMileage,
+                gasBrand:thisData.gasBrand,
+                m2EEnd:thisData.m2EEnd,
+                m2EStart:thisData.m2EStart,
+                secondTimeGasBrand: thisData.secondTimeGasBrand,
+                startingMileage:thisData.startingMileage,
+            })
+        });
+        setFillHistoryData(arr);
+    }
+
+
+
     const fetchData = async () => {
         console.log('FETCHING WITH EMAIL:',userEmail)
         const ref = doc(db,'users',`${userEmail}`,'fillInProgress','newest');
@@ -41,11 +63,13 @@ const HomeScreen = ({navigation}) => {
         } else {
             setFillInProgress(false);
         }
+        await fetchHistory()
     };
 
     const signOutFirebase = async () => {
         await signOut(auth)
             .then(() =>{
+                dispatch(logout);
                 console.log('SIGN OUT SUCCESS');
                 navigation.replace('Login');
             })
@@ -53,10 +77,11 @@ const HomeScreen = ({navigation}) => {
     }
 
     useEffect(() => {
-        fetchData().then()
-        console.log(userEmail);
+        fetchData()
+            .then()
+            .catch(err => alert(err))
         return () => {}
-    },[userEmail])
+    },[])
 
     const FillInProgressImage = () => {
 
@@ -87,12 +112,12 @@ const HomeScreen = ({navigation}) => {
             <HeaderComponent inProgress={fillInProgress} signOut={signOutFirebase}/>
             <ScrollView style={tw`flex-1`} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> }>
                 <View style={tw`flex-row justify-evenly m-5`}>
-                    <FillHistory navigation={navigation}/>
-                    <WelcomeUser userEmail={userEmail}/>
+                    <FillHistory navigation={navigation} fillHistoryData={fillHistoryData}/>
+                    <WelcomeUser userEmail={userEmail} navigation={navigation}/>
                 </View>
                 {fillInProgress ? <FillInProgressImage/> : <View/>}
                 <View>
-                    <RecentFillHistory fillInProgress={fillInProgress}/>
+                    <RecentFillHistory data={fillHistoryData} fillInProgress={fillInProgress}/>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -140,6 +165,9 @@ const WelcomeUser = (props) => {
     return (
         <TouchableOpacity
             style={[tw`flex-1 rounded-lg pt-2 pb-2 px-3 mx-2 shadow-lg`, {backgroundColor: '#00FFFF'}]}
+            onPress={() => {
+                props.navigation.navigate('User Account');
+            }}
         >
             <Text style={tw`text-xl`}>Hello,</Text>
             <Text style={tw`text-3xl tracking-wide font-semibold`}>{props.userEmail.split('@')[0]}</Text>
@@ -158,7 +186,7 @@ const FillHistory = (props) => {
     return (
         <TouchableOpacity
             onPress={() => {
-                props.navigation.navigate('History');
+                props.navigation.navigate('History',{item:props.fillHistoryData});
             }}
             style={[tw`rounded-lg flex-1 pt-2 pb-2 px-3 mx-2 shadow-lg`, {backgroundColor: '#00FFFF'}]}
         >
