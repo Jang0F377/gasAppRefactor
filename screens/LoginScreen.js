@@ -1,21 +1,27 @@
 import tw from 'twrnc';
 import {useEffect, useState} from "react";
 import {KeyboardAvoidingView, SafeAreaView, TouchableOpacity, View} from "react-native";
-import {Button, Input, Text} from "@rneui/themed";
+import {Input, Text} from "@rneui/themed";
 import {signInWithEmailAndPassword} from 'firebase/auth';
-import {auth, db} from "../firebase";
-import {setDoc, doc, serverTimestamp} from 'firebase/firestore'
-
+import {auth} from "../firebase";
+import {useDispatch} from "react-redux";
+import {login} from "../slices/userSlice";
 
 
 const LoginScreen = ({navigation}) => {
     const [email,setEmail] = useState('');
     const [password,setPassword] = useState('');
+    const dispatch = useDispatch();
+
+    const wait = (timeout) => {
+        return new Promise(resolve => setTimeout(resolve, timeout));
+    }
 
 
     useEffect(() => {
         return auth.onAuthStateChanged((authUser) => {
             if (authUser) {
+                dispatch(login(authUser.email))
                 navigation.replace('Home');
             }
         });
@@ -27,7 +33,11 @@ const LoginScreen = ({navigation}) => {
         await signInWithEmailAndPassword(auth,email,password)
             .then((cred) =>{
                 const user = cred.user;
-                navigation.replace('Home');
+                dispatch(login(user.email))
+                wait(1500).then(() => {
+                    navigation.replace('Home');
+                })
+
             })
             .catch(err => alert(err));
 

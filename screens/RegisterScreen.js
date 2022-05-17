@@ -5,17 +5,22 @@ import {createUserWithEmailAndPassword} from 'firebase/auth';
 import {auth, db} from "../firebase";
 import {doc, setDoc} from "firebase/firestore";
 import {useState} from "react";
+import {useDispatch} from "react-redux";
+import {login} from "../slices/userSlice";
 
 
 const RegisterScreen = ({navigation}) => {
     const [email,setEmail] = useState('');
     const [password,setPassword] = useState('');
+    const dispatch = useDispatch();
 
-    const sendUserToFirestore = async (email,uid) => {
+    const wait = (timeout) => {
+        return new Promise(resolve => setTimeout(resolve, timeout));
+    }
+
+    const sendUserToFirestore = async (email) => {
         await setDoc(doc(db,'users', email), {
-            email:email,
-            uid:uid,
-            firstFill:true
+            firstFill:true,
         })
     };
 
@@ -23,11 +28,17 @@ const RegisterScreen = ({navigation}) => {
         await createUserWithEmailAndPassword(auth,email,password)
             .then((authUser) => {
                 const user = authUser.user;
-                sendUserToFirestore(user.email,user.uid)
-                    .then()
+                sendUserToFirestore(user.email)
+                    .then(() => {
+                        dispatch(login(user.email))
+                    })
                     .catch(err => alert(err))
             })
-            .then(navigation.replace('Home'))
+            .then(() => {
+                wait(1500).then(() => {
+                    navigation.replace('Home')
+                })
+            })
             .catch(err => alert(err))
 
     }

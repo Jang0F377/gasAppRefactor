@@ -5,6 +5,8 @@ import {useState} from "react";
 import {doc, deleteDoc, addDoc, collection, serverTimestamp, setDoc} from "firebase/firestore";
 import {db} from "../firebase";
 import {useNavigation} from "@react-navigation/native";
+import {useSelector} from "react-redux";
+import {selectUserEmail} from "../slices/userSlice";
 
 
 
@@ -41,18 +43,19 @@ const FillInProgressComponent = ({item}) => {
     const [gasBrand,setGasBrand] = useState('');
     const [loading,setLoading] = useState(false);
     const navigation = useNavigation();
+    const userEmail = useSelector(selectUserEmail);
 
     const wait = (timeout) => {
         return new Promise(resolve => setTimeout(resolve, timeout));
     };
 
     const deleteFirestoreDoc = async  () => {
-        await deleteDoc(doc(db,'fillInProgress','newest'))
+        await deleteDoc(doc(db,'users',`${userEmail}`,'fillInProgress','newest'))
 
     }
 
     const submitFinalFill = async () => {
-        await addDoc(collection(db,'finalFills'),{
+        await addDoc(collection(db,'users',`${userEmail}`,'finalFills'),{
             gasBrand:item.gasBrand,
             m2EStart:item.m2EStart,
             m2EEnd:m2EEnd,
@@ -62,7 +65,7 @@ const FillInProgressComponent = ({item}) => {
             currentTimestamp:serverTimestamp(),
             initialTimestamp:item.timestamp,
         })
-        await setDoc(doc(db,'odometer','mileage'),{
+        await setDoc(doc(db,'users',`${userEmail}`,'odometer','mileage'),{
             startingMileage: odomEnd,
         })
     };
@@ -102,7 +105,7 @@ const FillInProgressComponent = ({item}) => {
                         <Text style={tw`text-center font-semibold text-lg my-auto`}>Odometer</Text>
                         <Text style={tw`text-center font-semibold my-auto text-lg`}>End:</Text>
                         <TextInput style={tw`m-2 text-center text-xl`}
-                                   placeholder={'...miles'} placeholderTextColor={'gray'}
+                                   placeholder={`...${item.startingMileage}`} placeholderTextColor={'gray'}
                                    keyboardType='numeric'
                                    maxLength={6}
                                    returnKeyType='done'

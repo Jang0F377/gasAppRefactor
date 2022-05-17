@@ -7,12 +7,15 @@ import {auth, db} from "../firebase";
 import {useNavigation} from "@react-navigation/native";
 import RecentFillHistory from "../components/RecentFillHistory";
 import {signOut} from 'firebase/auth'
+import {useSelector} from "react-redux";
+import {selectUserEmail} from "../slices/userSlice";
 
 
 const HomeScreen = ({navigation}) => {
     const [fillInProgress,setFillInProgress] = useState(false);
     const [fillInProgressData,setFillInProgressData] = useState({});
     const [refreshing, setRefreshing] = useState(false);
+    const userEmail = useSelector(selectUserEmail)
 
     const wait = (timeout) => {
         return new Promise(resolve => setTimeout(resolve, timeout));
@@ -28,7 +31,8 @@ const HomeScreen = ({navigation}) => {
     }, []);
 
     const fetchData = async () => {
-        const ref = doc(db,'fillInProgress','newest');
+        console.log('FETCHING WITH EMAIL:',userEmail)
+        const ref = doc(db,'users',`${userEmail}`,'fillInProgress','newest');
         const docSnap = await getDoc(ref);
         if (docSnap.exists()) {
             setFillInProgress(true)
@@ -50,8 +54,9 @@ const HomeScreen = ({navigation}) => {
 
     useEffect(() => {
         fetchData().then()
+        console.log(userEmail);
         return () => {}
-    },[])
+    },[userEmail])
 
     const FillInProgressImage = () => {
 
@@ -83,7 +88,7 @@ const HomeScreen = ({navigation}) => {
             <ScrollView style={tw`flex-1`} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> }>
                 <View style={tw`flex-row justify-evenly m-5`}>
                     <FillHistory navigation={navigation}/>
-                    <WelcomeUser/>
+                    <WelcomeUser userEmail={userEmail}/>
                 </View>
                 {fillInProgress ? <FillInProgressImage/> : <View/>}
                 <View>
@@ -131,13 +136,13 @@ const HeaderComponent = (props) => {
     );
 }
 
-const WelcomeUser = () => {
+const WelcomeUser = (props) => {
     return (
         <TouchableOpacity
             style={[tw`flex-1 rounded-lg pt-2 pb-2 px-3 mx-2 shadow-lg`, {backgroundColor: '#00FFFF'}]}
         >
             <Text style={tw`text-xl`}>Hello,</Text>
-            <Text style={tw`text-3xl`}>Matthew</Text>
+            <Text style={tw`text-3xl tracking-wide font-semibold`}>{props.userEmail.split('@')[0]}</Text>
             <View style={tw`flex flex-row justify-evenly`}>
                 <Icon name='user-circle' color='white' style={tw`py-1 px-3 bg-black rounded-full w-15 mt-3`} type='font-awesome'/>
                 <Icon
@@ -157,9 +162,8 @@ const FillHistory = (props) => {
             }}
             style={[tw`rounded-lg flex-1 pt-2 pb-2 px-3 mx-2 shadow-lg`, {backgroundColor: '#00FFFF'}]}
         >
-            <Text style={tw`text-2xl underline`}>Last Fill:</Text>
-            <Text style={tw`text-4xl text-center mt-2 font-extrabold`}>8</Text>
-            <Text style={tw`text-sm text-center`}>Days Ago</Text>
+            <Text style={tw`text-2xl font-semibold tracking-wide text-center my-auto`}>Full Fill History Press Here</Text>
+
         </TouchableOpacity>
     );
 

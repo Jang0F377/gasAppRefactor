@@ -4,12 +4,15 @@ import {Text} from "@rneui/themed";
 import {collection, query, orderBy, onSnapshot, doc, getDocs} from 'firebase/firestore';
 import {db} from "../firebase";
 import {useEffect, useState} from "react";
+import {useSelector} from "react-redux";
+import {selectUserEmail} from "../slices/userSlice";
 
 const FullFillHistoryScreen = () => {
     const [data,setData] = useState([]);
+    const userEmail = useSelector(selectUserEmail);
 
     const fetchHistory = async () => {
-        const ref = collection(db,'finalFills');
+        const ref = collection(db,'users',`${userEmail}`,'finalFills');
         const docSnap = await getDocs(ref);
         const arr = [];
         docSnap.forEach((doc) => {

@@ -2,7 +2,8 @@ import tw from 'twrnc';
 import {
     ActivityIndicator,
     Button,
-    KeyboardAvoidingView, Modal,
+    KeyboardAvoidingView,
+    Modal,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -10,18 +11,14 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import { Icon, Input, Text} from "@rneui/themed";
+import {Icon, Input, Text} from "@rneui/themed";
 import {useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
-import {
-    selectOddFillUpObject,
-    selectStartingMileage,
-    setOddFillUpObject,
-    setStartingMileage
-} from "../slices/odometerSlice";
-import {serverTimestamp,getDoc,setDoc,doc} from 'firebase/firestore';
-import {db} from "../firebase";
+import {selectStartingMileage, setStartingMileage} from "../slices/odometerSlice";
+import {doc, getDoc, serverTimestamp, setDoc, updateDoc} from 'firebase/firestore';
+import {auth, db} from "../firebase";
 import {useNavigation} from "@react-navigation/native";
+import {selectUserEmail} from "../slices/userSlice";
 
 
 const StartNewFillScreen = () => {
@@ -29,13 +26,13 @@ const StartNewFillScreen = () => {
     const [gasBrand,setGasBrand] = useState('');
     const [m2EStart,setM2EStart] = useState('');
     const [loading,setLoading] = useState(false);
-    const [fetch,setFetch] = useState(false);
     const mileageStart = useSelector(selectStartingMileage);
+    const userEmail = useSelector(selectUserEmail);
     const dispatch = useDispatch();
 
 
     const getOdometerFirebase = async () => {
-        const ref = doc(db,'odometer','mileage')
+        const ref = doc(db,'users',`${userEmail}`,'odometer','mileage')
         const docSnap = await getDoc(ref);
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -49,7 +46,7 @@ const StartNewFillScreen = () => {
 
 
     const submitNewFill = async () => {
-        await setDoc(doc(db,'fillInProgress','newest'), {
+        await setDoc(doc(db,'users',`${userEmail}`,'fillInProgress','newest'), {
             startingMileage:mileageStart,
             m2EStart:m2EStart,
             gasBrand:gasBrand,
@@ -86,9 +83,10 @@ const StartNewFillScreen = () => {
             </View>
             <ScrollView style={tw`flex-1`}>
                 <View style={tw`p-5 py-6 border-b`}>
-                    <Text style={tw`text-lg text-left m-2 underline`}>Enter the Gas Brand...</Text>
+                    <Text style={tw`text-xl text-left m-2 underline`}>Enter the Gas Brand...</Text>
                     <Input
-                        leftIcon={<Icon name='gas-pump' type='font-awesome-5' size={20} style={tw`p-1 mr-1`}/>}
+                        inputStyle={tw`ml-2 text-2xl`}
+                        leftIcon={<Icon name='gas-pump' type='font-awesome-5' size={24} style={tw`mr-2`}/>}
                         placeholder='Arco, Chevron, etc...'
                         value={gasBrand}
                         onChangeText={(text) => setGasBrand(text)}/>
@@ -98,7 +96,7 @@ const StartNewFillScreen = () => {
                         <View style={tw`flex flex-col p-1 `}>
                             <Text style={tw`text-center text-xl my-auto`}>Odometer</Text>
                             <Text style={tw` text-center my-auto text-xl`}> Start:</Text>
-                            <Text style={tw`p-2 m-2 text-center`}>{mileageStart}</Text>
+                            <Text style={tw`p-2 m-2 text-lg text-center`}>{mileageStart}</Text>
                         </View>
                     </View>
                 </View>
@@ -108,8 +106,8 @@ const StartNewFillScreen = () => {
                         <View style={tw`flex flex-col p-1 `}>
                             <Text style={tw`text-center text-xl my-auto`}>Miles-2-Empty</Text>
                             <Text style={tw` text-center my-auto text-xl`}> Start:</Text>
-                            <Input
-                                style={tw`p-2 m-2 text-center`}
+                            <TextInput
+                                style={tw`p-2 text-lg m-2 text-center`}
                                 placeholder={'...miles'}
                                 placeholderTextColor={'gray'}
                                 keyboardType='numeric'
@@ -137,15 +135,58 @@ const StartNewFillScreen = () => {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
-            <InfoModal dispatch={dispatch} navigation={navigation}/>
+            <InfoModal dispatch={dispatch} navigation={navigation} userEmail={userEmail}/>
         </SafeAreaView>
     );
 };
 
 const InfoModal = (props) => {
+
+    const firstFillCheck = async () => {
+        const user = await auth.currentUser;
+        if (user) {
+            const email = user.email;
+            if (!await getFirstFill(email)) {
+                setIsVisible(false)
+
+            } else  {
+                setIsVisible(true)
+                await changeFirstFill2False(email)
+            }
+        } else {
+            console.log("No User Detected")
+        }
+    };
+
+    const changeFirstFill2False = async (userEmail) => {
+        const ref = doc(db,'users',`${userEmail}`);
+        await updateDoc(ref, {
+            firstFill: false,
+        });
+    };
+
+    const getFirstFill = async (userEmail) => {
+        const ref = doc(db,'users', `${userEmail}`)
+        const docSnap = await getDoc(ref);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            return data.firstFill;
+        } else {
+            // doc.data() will be undefined in this case
+            console.error("No such document!");
+        }
+    }
+
+    useEffect(() => {
+        firstFillCheck().then()
+
+        return () => {}
+    },[])
+
+
     const navigation = props.navigation
     const dispatch = props.dispatch;
-    const [isVisible,setIsVisible]= useState(true);
+    const [isVisible,setIsVisible]= useState(false);
     const [odomStart,setOdomStart] = useState('');
     const handleClose = () => {
         if (!odomStart) {
@@ -158,7 +199,7 @@ const InfoModal = (props) => {
 
 
     const setStartingOdometer = async () => {
-        await setDoc(doc(db,'odometer','mileage'),{
+        await setDoc(doc(db,'users',`${props.userEmail}`,'odometer','mileage'),{
             startingMileage: odomStart,
         })
     }
@@ -166,7 +207,7 @@ const InfoModal = (props) => {
 
     return(
         <View style={tw`flex`}>
-            <Modal visible={!isVisible} presentationStyle={"formSheet"} animationType={"slide"} onRequestClose={handleClose}>
+            <Modal visible={isVisible} presentationStyle={"formSheet"} animationType={"slide"} onRequestClose={handleClose}>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={tw`flex-1`}
@@ -216,13 +257,14 @@ const InfoModal = (props) => {
                         <Text style={tw`text-center px-1 m-1`}>When its time to fill up again, come back (when your at the station but before you add the gas) and enter what your M2E gauge and Odometer ended at.</Text>
                         <Text style={tw`text-center text-base font-medium mt-2 p-1`}>Enter starting Odometer</Text>
                         <TextInput
-                            style={tw`p-2 m-1 mx-auto text-center border w-20`}
+                            style={tw`p-2 m-1 mx-auto text-center border`}
                             placeholder={'...miles'}
                             placeholderTextColor={'gray'}
                             keyboardType='numeric'
                             maxLength={6}
                             returnKeyType='done'
                             onChangeText={(text) => setOdomStart(text)}
+                            value={odomStart}
                         />
                         <Button
                             containerStyle={tw`p-3 m-5 mt-7 shadow-xl`}
